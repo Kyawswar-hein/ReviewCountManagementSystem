@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Project Import</title>
+  <style>
+    .container { padding: 20px; font-family: sans-serif; }
+    .btn-save { background-color: #28a745; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+    th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+    th { background-color: #f8f9fa; }
+    .success-msg { color: #28a745; font-weight: bold; padding: 10px; background: #e8f5e9; border-radius: 4px; margin-bottom: 15px; }
+    .badge { background-color: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; display: inline-block; margin: 1px; }
+    .text-muted { color: #6c757d; font-style: italic; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>Import Project Data (Full Metrics)</h2>
+
+  <form th:action="@{/projects/preview}" method="post" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".xlsx" required />
+    <button type="submit">Import and Preview</button>
+  </form>
+
+  <hr>
+
+  <div th:if="${param.success}" class="success-msg">
+    All project metrics successfully saved to database!
+  </div>
+
+  <div th:if="${projects != null}">
+    <h3>Review Imported Data (<span th:text="${projects.size()}"></span> rows)</h3>
+
+    <form th:action="@{/projects/save}" method="post" th:object="${wrapper}" th:if="${!projects.empty}">
+      <table>
+        <thead>
+        <tr>
+          <th>Team / Project</th>
+          <th>Development Languages</th>
+          <th>PGM (N/M)</th>
+          <th>JOB (N/M)</th>
+          <th>Pages (N/M)</th>
+          <th>Hours (Est/Act)</th>
+          <th>Internal/Ext Defect</th>
+          <th>Missing/Rule/Input/Logic</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="item, stat : ${projects}">
+          <td>
+            <strong th:text="${item.project.teamName}"></strong><br/>
+            <span th:text="${item.project.projectName}"></span>
+          </td>
+          <td>
+            <span th:each="lang : ${item.languages}" th:text="${lang}" class="badge"></span>
+            <span th:if="${#lists.isEmpty(item.languages)}" class="text-muted">None</span>
+          </td>
+          <td th:text="${item.designNumber.pgmNew + ' / ' + item.designNumber.pgmModified}"></td>
+          <td th:text="${item.designNumber.jobNew + ' / ' + item.designNumber.jobModified}"></td>
+          <td th:text="${item.designNumber.pagesNew + ' / ' + item.designNumber.pagesModified}"></td>
+          <td th:text="${item.detailedDesign.estimatedManHour + ' / ' + item.detailedDesign.actualManHour}"></td>
+          <td th:text="${item.detailedDesign.internalComplaint + ' / ' + item.detailedDesign.externalCriticism}"></td>
+          <td th:text="${item.reviewCount.missingInformation + ' / ' + item.reviewCount.ruleViolation + ' / ' + item.reviewCount.inputError + ' / ' + item.reviewCount.logicOmissionOrError}"></td>
+
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].project.teamName}" />
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].project.projectName}" />
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].project.systemName}" />
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].project.difficultyLevel}" />
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].project.hostDistributed}" />
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].project.weekId}" />
+
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].designNumber.pgmNew}" />
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].designNumber.pgmModified}" />
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].designNumber.jobNew}" />
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].designNumber.jobModified}" />
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].designNumber.pagesNew}" />
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].designNumber.pagesModified}" />
+
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].detailedDesign.estimatedManHour}" />
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].detailedDesign.actualManHour}" />
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].detailedDesign.internalComplaint}" />
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].detailedDesign.externalCriticism}" />
+
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].reviewCount.missingInformation}" />
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].reviewCount.ruleViolation}" />
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].reviewCount.inputError}" />
+          <input type="hidden" th:field="*{importItems[__${stat.index}__].reviewCount.logicOmissionOrError}" />
+
+          <th:block th:each="lang, langStat : ${item.languages}">
+            <input type="hidden"
+                   th:name="|importItems[${stat.index}].languages[${langStat.index}]|"
+                   th:value="${lang}" />
+          </th:block>
+        </tr>
+        </tbody>
+      </table>
+      <br>
+      <button type="submit" class="btn-save">Confirm and Save All Metrics</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>

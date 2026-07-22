@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Project Import Tool</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 40px;
+            background-color: #f0f2f3;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        h2 { color: #1a73e8; margin-top: 0; }
+
+        /* Layout for the selection controls */
+        .import-header {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            align-items: flex-end;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: #555; }
+        select, input[type="file"] {
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            background-color: white;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .btn-preview { background-color: #1a73e8; color: white; }
+        .btn-preview:hover { background-color: #1557b0; }
+        .btn-save {
+            background-color: #34a853;
+            color: white;
+            width: 100%;
+            margin-top: 20px;
+            font-size: 1rem;
+        }
+        .btn-save:hover { background-color: #2d8a46; }
+
+        /* Table Styling */
+        table { width: 100%; border-collapse: collapse; margin-top: 25px; }
+        th { background-color: #f1f3f4; color: #5f6368; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid #eee; text-align: left; }
+        tr:hover { background-color: #fcfcfc; }
+
+        /* Success Message */
+        .alert-success {
+            background-color: #e6f4ea;
+            color: #1e8e3e;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 5px solid #34a853;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Project Import Tool</h2>
+
+    <div th:if="${param.success}" class="alert-success">
+        <strong>Success!</strong> The projects have been saved to the database.
+    </div>
+
+    <form th:action="@{/projects/tool/preview}" method="post" enctype="multipart/form-data">
+        <div class="import-header">
+            <div class="form-group">
+                <label>Target Year</label>
+                <select name="year">
+                    <option th:each="y : ${#numbers.sequence(2024, 2050)}"
+                            th:value="${y}" th:text="${y}"
+                            th:selected="${y == currentYear}"></option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Target Month</label>
+                <select name="month">
+                    <option th:each="m : ${#numbers.sequence(1, 12)}"
+                            th:value="${m}" th:text="${m} + '月'"></option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Week Number</label>
+                <select name="weekId">
+                    <option value="1">Week 1</option>
+                    <option value="2">Week 2</option>
+                    <option value="3">Week 3</option>
+                    <option value="4">Week 4</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Select Excel File</label>
+                <input type="file" name="file" accept=".xlsx" required />
+            </div>
+
+            <button type="submit" class="btn btn-preview">Preview Import</button>
+        </div>
+    </form>
+
+    <div th:if="${wrapper != null}">
+        <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
+
+        <h3>
+            Previewing:
+            <span th:text="${selectedYear}"></span>年
+            <span th:text="${selectedMonth}"></span>月
+            (Week <span th:text="${selectedWeek}"></span>)
+        </h3>
+
+        <form th:action="@{/projects/tool/save}" th:object="${wrapper}" method="post">
+            <table>
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Project Name</th>
+                    <th>Assigned Date</th>
+                    <th>Week ID</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="p, stat : *{projects}">
+                    <td th:text="${stat.count}"></td>
+                    <td th:text="${p.projectName}"></td>
+                    <td th:text="${p.projectMonth}"></td>
+                    <td th:text="${p.weekId}"></td>
+
+                    <input type="hidden" th:field="*{projects[__${stat.index}__].projectName}" />
+                    <input type="hidden" th:field="*{projects[__${stat.index}__].projectMonth}" />
+                    <input type="hidden" th:field="*{projects[__${stat.index}__].weekId}" />
+                </tr>
+                </tbody>
+            </table>
+
+            <div th:if="${#lists.isEmpty(wrapper.projects)}" style="padding: 20px; text-align: center; color: #999;">
+                No project names found in the selected sheet.
+            </div>
+
+            <button type="submit" th:if="${!#lists.isEmpty(wrapper.projects)}" class="btn btn-save">
+                Confirm & Save <span th:text="${#lists.size(wrapper.projects)}"></span> Projects
+            </button>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

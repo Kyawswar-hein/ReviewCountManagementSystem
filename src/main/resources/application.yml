@@ -1,0 +1,18 @@
+spring:
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/ReviewCountMonitoringApp
+    username: postgres
+    password: wise
+    driver-class-name: org.postgresql.Driver
+
+  # This will create table automatically in your database
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+  # THYMELEAF (ThymeleafAutoConfiguration)
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+
